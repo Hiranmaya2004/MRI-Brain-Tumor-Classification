@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MRI Saliency Stability Analyzer | Brain Tumor Classification</title>
+    <meta name="description" content="Interactive web demo for Quantitative Stability Analysis of Saliency Maps under Structured Perturbations in MRI Brain Tumor Classification. Test the model, explore metrics, and visualize Grad-CAM explanations.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="bg-glow bg-glow-3"></div>
+
+    <!-- Navigation -->
+    <nav id="main-nav">
+        <div class="nav-container">
+            <a href="#" class="nav-logo">
+                <span class="logo-icon">🧠</span>
+                <span class="logo-text">MRI<span class="logo-accent">Saliency</span></span>
+            </a>
+            <div class="nav-links">
+                <a href="#hero" class="nav-link active" data-section="hero">Home</a>
+                <a href="#classifier" class="nav-link" data-section="classifier">Classifier</a>
+                <a href="#metrics" class="nav-link" data-section="metrics">Metrics</a>
+                <a href="#stability" class="nav-link" data-section="stability">Stability</a>
+                <a href="#methodology" class="nav-link" data-section="methodology">Methodology</a>
+                <a href="#team" class="nav-link" data-section="team">Team</a>
+            </div>
+            <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="hero" class="section hero-section">
+        <div class="container">
+            <div class="hero-badge">IEEE Research Paper • 2026</div>
+            <h1 class="hero-title">
+                Quantitative Stability Analysis of
+                <span class="gradient-text">Saliency Maps</span>
+                in MRI Brain Tumor Classification
+            </h1>
+            <p class="hero-subtitle">
+                Investigating the robustness of Grad-CAM explanations under Gaussian, Rician, and FGSM adversarial perturbations — because trustworthy AI needs trustworthy explanations.
+            </p>
+            <div class="hero-stats">
+                <div class="stat-card" data-value="94.19" data-suffix="%">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Test Accuracy</div>
+                </div>
+                <div class="stat-card" data-value="1600" data-suffix="">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Test Images</div>
+                </div>
+                <div class="stat-card" data-value="4" data-suffix="">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Tumor Classes</div>
+                </div>
+                <div class="stat-card" data-value="3" data-suffix="">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Perturbation Types</div>
+                </div>
+            </div>
+            <div class="hero-actions">
+                <a href="#classifier" class="btn btn-primary">
+                    <span>Try the Classifier</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+                <a href="#metrics" class="btn btn-secondary">
+                    <span>View Results</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Classifier Section -->
+    <section id="classifier" class="section">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-badge">Interactive Demo</div>
+                <h2 class="section-title">MRI Brain Tumor <span class="gradient-text">Classifier</span></h2>
+                <p class="section-subtitle">Upload an MRI scan to classify it and visualize the Grad-CAM saliency map. See how the model interprets your image.</p>
+            </div>
+
+            <div class="classifier-grid">
+                <!-- Upload Area -->
+                <div class="upload-panel glass-card">
+                    <div class="upload-zone" id="upload-zone">
+                        <div class="upload-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                            </svg>
+                        </div>
+                        <h3>Drag & Drop MRI Image</h3>
+                        <p>or click to browse • PNG, JPG, JPEG</p>
+                        <input type="file" id="file-input" accept="image/*" hidden>
+                    </div>
+                    <div class="preview-container" id="preview-container" style="display:none;">
+                        <img id="preview-image" alt="Uploaded MRI scan preview">
+                        <button class="btn-remove" id="btn-remove" aria-label="Remove image">✕</button>
+                    </div>
+                    <button class="btn btn-primary btn-full" id="btn-classify" disabled>
+                        <span>Classify Image</span>
+                        <div class="btn-loader" id="btn-loader"></div>
+                    </button>
+
+                    <!-- Sample Images -->
+                    <div class="sample-images">
+                        <p class="sample-label">Or try a sample:</p>
+                        <div class="sample-grid">
+                            <button class="sample-btn" data-class="glioma" id="sample-glioma">Glioma</button>
+                            <button class="sample-btn" data-class="meningioma" id="sample-meningioma">Meningioma</button>
+                            <button class="sample-btn" data-class="pituitary" id="sample-pituitary">Pituitary</button>
+                            <button class="sample-btn" data-class="notumor" id="sample-notumor">No Tumor</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Area -->
+                <div class="results-panel glass-card" id="results-panel">
+                    <div class="results-placeholder" id="results-placeholder">
+                        <div class="placeholder-icon">🔬</div>
+                        <h3>Awaiting Classification</h3>
+                        <p>Upload an MRI scan to see the model's prediction, confidence scores, and saliency visualization.</p>
+                    </div>
+                    <div class="results-content" id="results-content" style="display:none;">
+                        <div class="result-header">
+                            <div class="result-prediction">
+                                <span class="result-label">Prediction</span>
+                                <span class="result-class" id="result-class">—</span>
+                            </div>
+                            <div class="result-confidence">
+                                <span class="result-label">Confidence</span>
+                                <span class="result-conf-value" id="result-confidence">—</span>
+                            </div>
+                        </div>
+                        <div class="confidence-bars" id="confidence-bars"></div>
+                        <div class="saliency-section">
+                            <h4>Grad-CAM Saliency Map</h4>
+                            <div class="saliency-display">
+                                <div class="saliency-item">
+                                    <canvas id="saliency-canvas" width="224" height="224"></canvas>
+                                    <span>Original + Heatmap</span>
+                                </div>
+                                <div class="saliency-item">
+                                    <canvas id="heatmap-canvas" width="224" height="224"></canvas>
+                                    <span>Heatmap Only</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="perturbation-test" id="perturbation-test">
+                            <h4>Perturbation Stability Test</h4>
+                            <div class="perturbation-metrics" id="perturbation-metrics"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Model Metrics Section -->
+    <section id="metrics" class="section">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-badge">Model Performance</div>
+                <h2 class="section-title">Classification <span class="gradient-text">Metrics</span></h2>
+                <p class="section-subtitle">Comprehensive performance evaluation of the ResNet-50 model fine-tuned on 5,712 brain MRI images across four classes.</p>
+            </div>
+
+            <div class="metrics-grid">
+                <!-- Architecture Card -->
+                <div class="metric-card glass-card architecture-card">
+                    <div class="metric-icon">🏗️</div>
+                    <h3>Model Architecture</h3>
+                    <div class="arch-details">
+                        <div class="arch-item">
+                            <span class="arch-label">Base Model</span>
+                            <span class="arch-value">ResNet-50</span>
+                        </div>
+                        <div class="arch-item">
+                            <span class="arch-label">Pre-training</span>
+                            <span class="arch-value">ImageNet</span>
+                        </div>
+                        <div class="arch-item">
+                            <span class="arch-label">Output Classes</span>
+                            <span class="arch-value">4 (Glioma, Meningioma, Pituitary, No Tumor)</span>
+                        </div>
+                        <div class="arch-item">
+                            <span class="arch-label">Optimizer</span>
+                            <span class="arch-value">Adam (lr=1e-4)</span>
+                        </div>
+                        <div class="arch-item">
+                            <span class="arch-label">Epochs</span>
+                            <span class="arch-value">5</span>
+                        </div>
+                        <div class="arch-item">
+                            <span class="arch-label">Input Size</span>
+                            <span class="arch-value">224 × 224 × 3</span>
+                        </div>
+                        <div class="arch-item">
+                            <span class="arch-label">Loss Function</span>
+                            <span class="arch-value">Cross-Entropy</span>
+                        </div>
+                        <div class="arch-item">
+                            <span class="arch-label">GPU</span>
+                            <span class="arch-value">NVIDIA T4 (Colab)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Per-Class Performance -->
+                <div class="metric-card glass-card">
+                    <div class="metric-icon">📊</div>
+                    <h3>Per-Class Performance</h3>
+                    <table class="metrics-table" id="classification-table">
+                        <thead>
+                            <tr>
+                                <th>Class</th>
+                                <th>Precision</th>
+                                <th>Recall</th>
+                                <th>F1-Score</th>
+                                <th>Support</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="class-badge glioma">Glioma</span></td>
+                                <td>0.99</td><td>0.79</td><td>0.88</td><td>400</td>
+                            </tr>
+                            <tr>
+                                <td><span class="class-badge meningioma">Meningioma</span></td>
+                                <td>0.86</td><td>0.99</td><td>0.92</td><td>400</td>
+                            </tr>
+                            <tr>
+                                <td><span class="class-badge notumor">No Tumor</span></td>
+                                <td>0.95</td><td>1.00</td><td>0.97</td><td>400</td>
+                            </tr>
+                            <tr>
+                                <td><span class="class-badge pituitary">Pituitary</span></td>
+                                <td>0.99</td><td>0.99</td><td>0.99</td><td>400</td>
+                            </tr>
+                            <tr class="row-highlight">
+                                <td><strong>Macro Avg</strong></td>
+                                <td><strong>0.95</strong></td><td><strong>0.94</strong></td><td><strong>0.94</strong></td><td><strong>1600</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Training Loss Chart -->
+                <div class="metric-card glass-card">
+                    <div class="metric-icon">📉</div>
+                    <h3>Training Loss Convergence</h3>
+                    <div class="chart-container">
+                        <canvas id="training-loss-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Confusion Matrix -->
+                <div class="metric-card glass-card">
+                    <div class="metric-icon">🎯</div>
+                    <h3>Confusion Matrix</h3>
+                    <div class="chart-container confusion-container">
+                        <canvas id="confusion-matrix-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stability Analysis Section -->
+    <section id="stability" class="section">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-badge">Core Findings</div>
+                <h2 class="section-title">Saliency <span class="gradient-text">Stability Analysis</span></h2>
+                <p class="section-subtitle">Comprehensive evaluation of Grad-CAM explanation robustness under three types of structured perturbations across all 1,600 test images.</p>
+            </div>
+
+            <!-- Key Finding Banner -->
+            <div class="finding-banner glass-card">
+                <div class="finding-icon">⚠️</div>
+                <div class="finding-content">
+                    <h3>Key Finding</h3>
+                    <p><strong>Prediction stability does not guarantee explanation stability.</strong> The model retains correct predictions under all perturbations, yet saliency maps undergo significant spatial drift — with Pearson correlation dropping as low as 0.15 under FGSM adversarial attack and IoU dropping to 0.32 at ε=0.05.</p>
+                </div>
+            </div>
+
+            <div class="stability-grid">
+                <!-- Cross-Perturbation Comparison -->
+                <div class="stability-card glass-card full-width">
+                    <h3>Cross-Perturbation Comparison (n = 1,600)</h3>
+                    <table class="metrics-table" id="cross-perturbation-table">
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>Gaussian (σ=0.05)</th>
+                                <th>Rician (σ=0.05)</th>
+                                <th>FGSM (ε=0.01)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>SSIM</td>
+                                <td>0.6773 ± 0.2218</td>
+                                <td>0.6798 ± 0.2263</td>
+                                <td class="cell-warning">0.5838 ± 0.2315</td>
+                            </tr>
+                            <tr>
+                                <td>Pearson Corr.</td>
+                                <td>0.5143 ± 0.4325</td>
+                                <td>0.5242 ± 0.4334</td>
+                                <td class="cell-warning">0.2728 ± 0.5456</td>
+                            </tr>
+                            <tr>
+                                <td>L₂ Distance</td>
+                                <td>57.29 ± 30.63</td>
+                                <td>57.07 ± 31.01</td>
+                                <td class="cell-danger">70.62 ± 35.98</td>
+                            </tr>
+                            <tr>
+                                <td>IoU</td>
+                                <td>0.5151 ± 0.2554</td>
+                                <td>0.5158 ± 0.2617</td>
+                                <td class="cell-danger">0.4261 ± 0.2700</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Gaussian Noise Sweep -->
+                <div class="stability-card glass-card">
+                    <h3>Gaussian Noise Sweep</h3>
+                    <div class="chart-container">
+                        <canvas id="gaussian-sweep-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- FGSM Epsilon Sweep -->
+                <div class="stability-card glass-card">
+                    <h3>FGSM Epsilon Sweep</h3>
+                    <div class="chart-container">
+                        <canvas id="fgsm-sweep-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Class-Conditional Analysis -->
+                <div class="stability-card glass-card full-width">
+                    <h3>Class-Conditional Stability (Gaussian σ=0.05)</h3>
+                    <div class="chart-container">
+                        <canvas id="class-conditional-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Confidence vs Stability -->
+                <div class="stability-card glass-card full-width">
+                    <h3>Prediction Confidence vs Explanation Stability</h3>
+                    <div class="confidence-insight">
+                        <div class="insight-stat">
+                            <span class="insight-value">ρ = 0.2061</span>
+                            <span class="insight-label">Spearman (SSIM)</span>
+                        </div>
+                        <div class="insight-stat">
+                            <span class="insight-value">ρ = 0.3966</span>
+                            <span class="insight-label">Spearman (Pearson)</span>
+                        </div>
+                        <div class="insight-stat">
+                            <span class="insight-value">Weak</span>
+                            <span class="insight-label">Association Strength</span>
+                        </div>
+                    </div>
+                    <p class="insight-desc">High prediction confidence does NOT guarantee stable explanations. Meningioma achieves 97.5% avg confidence yet the worst SSIM (0.4752). No-tumor has the best of both: 99.9% confidence and 0.8872 SSIM.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Methodology Section -->
+    <section id="methodology" class="section">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-badge">Research Design</div>
+                <h2 class="section-title">Experimental <span class="gradient-text">Methodology</span></h2>
+                <p class="section-subtitle">Our systematic framework for measuring explanation robustness.</p>
+            </div>
+
+            <div class="methodology-pipeline">
+                <div class="pipeline-step glass-card">
+                    <div class="step-number">01</div>
+                    <div class="step-icon">🖼️</div>
+                    <h3>Input Image</h3>
+                    <p>Brain MRI scan from test set (224×224 pixels, normalized to [0,1])</p>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-step glass-card">
+                    <div class="step-number">02</div>
+                    <div class="step-icon">🤖</div>
+                    <h3>ResNet-50</h3>
+                    <p>Fine-tuned classifier predicts tumor class with 94.19% accuracy</p>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-step glass-card">
+                    <div class="step-number">03</div>
+                    <div class="step-icon">🔥</div>
+                    <h3>Grad-CAM</h3>
+                    <p>Generate saliency map from layer4 (final residual block)</p>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-step glass-card">
+                    <div class="step-number">04</div>
+                    <div class="step-icon">🔀</div>
+                    <h3>Perturb</h3>
+                    <p>Apply Gaussian, Rician, or FGSM perturbation to input</p>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-step glass-card">
+                    <div class="step-number">05</div>
+                    <div class="step-icon">📏</div>
+                    <h3>Compare</h3>
+                    <p>Measure SSIM, Pearson correlation, and L₂ distance between saliency maps</p>
+                </div>
+            </div>
+
+            <div class="perturbation-cards">
+                <div class="pert-card glass-card">
+                    <h4>Gaussian Noise</h4>
+                    <div class="formula">x̃ = x + η, η ~ N(0, σ²I)</div>
+                    <p>Additive white Gaussian noise at σ ∈ {0.01, 0.05, 0.10}</p>
+                </div>
+                <div class="pert-card glass-card">
+                    <h4>Rician Noise</h4>
+                    <div class="formula">x̃ = √((x+η₁)² + η₂²)</div>
+                    <p>MRI-realistic noise from magnitude reconstruction</p>
+                </div>
+                <div class="pert-card glass-card">
+                    <h4>FGSM Attack</h4>
+                    <div class="formula">x̃ = x + ε·sign(∇ₓL)</div>
+                    <p>Adversarial perturbation at ε ∈ {0.001, 0.005, 0.01, 0.02, 0.05}</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Team Section -->
+    <section id="team" class="section">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-badge">Research Team</div>
+                <h2 class="section-title">Project <span class="gradient-text">Credentials</span></h2>
+                <p class="section-subtitle">Department of Computer Science and Engineering, Faculty of Engineering & Technology (ITER), Siksha 'O' Anusandhan (Deemed to be University), Bhubaneswar, India</p>
+            </div>
+
+            <div class="team-grid">
+                <div class="team-card glass-card">
+                    <div class="team-avatar">HP</div>
+                    <h3>Hiranmaya Panda</h3>
+                    <p class="team-role">Lead Researcher</p>
+                    <p class="team-email">hiranmayapanda@soa.ac.in</p>
+                </div>
+                <div class="team-card glass-card">
+                    <div class="team-avatar">YS</div>
+                    <h3>Yagya Saini</h3>
+                    <p class="team-role">Researcher</p>
+                    <p class="team-email">yagyasaini@soa.ac.in</p>
+                </div>
+                <div class="team-card glass-card">
+                    <div class="team-avatar">NK</div>
+                    <h3>Naman Kumar</h3>
+                    <p class="team-role">Researcher</p>
+                    <p class="team-email">namankumar@soa.ac.in</p>
+                </div>
+                <div class="team-card glass-card">
+                    <div class="team-avatar">GP</div>
+                    <h3>Gourab Panda</h3>
+                    <p class="team-role">Researcher</p>
+                    <p class="team-email">gourabpanda@soa.ac.in</p>
+                </div>
+                <div class="team-card glass-card">
+                    <div class="team-avatar">JP</div>
+                    <h3>Janmejaya Panda</h3>
+                    <p class="team-role">Supervisor</p>
+                    <p class="team-email">janmejayapanda@soa.ac.in</p>
+                </div>
+            </div>
+
+            <div class="paper-card glass-card">
+                <h3>📄 Research Paper</h3>
+                <p class="paper-title">"Quantitative Stability Analysis of Saliency Maps under Structured Perturbations in MRI Brain Tumor Classification"</p>
+                <div class="paper-meta">
+                    <span>📅 2026</span>
+                    <span>🏛️ IEEE Format</span>
+                    <span>📊 Brain Tumor MRI Dataset</span>
+                    <span>🔧 PyTorch + Captum</span>
+                </div>
+                <div class="paper-techs">
+                    <span class="tech-badge">ResNet-50</span>
+                    <span class="tech-badge">Grad-CAM</span>
+                    <span class="tech-badge">SSIM</span>
+                    <span class="tech-badge">FGSM</span>
+                    <span class="tech-badge">Rician Noise</span>
+                    <span class="tech-badge">Integrated Gradients</span>
+                    <span class="tech-badge">Captum</span>
+                    <span class="tech-badge">Transfer Learning</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <span class="logo-icon">🧠</span>
+                    <span>MRI Saliency Stability Analyzer</span>
+                </div>
+                <p>© 2026 Siksha 'O' Anusandhan University. All rights reserved.</p>
+                <p class="footer-note">This interactive demo accompanies the research paper. Classification results shown are simulated for demonstration purposes.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
