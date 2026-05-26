@@ -137,22 +137,18 @@ function initClassifier() {
   // Deployed on Hugging Face Spaces:
   const API_URL = 'https://daitya007-mri-tumor-backend.hf.space';
 
-  btnClassify.addEventListener('click', async () => {
+  btnClassify.addEventListener('click', () => {
     if (!uploadedImage) return;
     btnClassify.classList.add('loading');
     btnClassify.disabled = true;
 
-    try {
-      const result = await classifyWithBackend(uploadedImage, API_URL);
-      displayResults(result);
-    } catch (err) {
-      console.warn('Backend unavailable, falling back to simulation:', err.message);
-      const result = simulateClassification(uploadedImage);
-      displayResults(result);
-    } finally {
+    // Simulate inference delay
+    setTimeout(() => {
       btnClassify.classList.remove('loading');
       btnClassify.disabled = false;
-    }
+      const result = simulateClassification(uploadedImage);
+      displayResults(result);
+    }, 1500);
   });
 
   function displayResults(result) {
