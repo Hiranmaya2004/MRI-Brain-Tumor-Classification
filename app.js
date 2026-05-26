@@ -133,18 +133,26 @@ function initClassifier() {
     });
   });
 
-  btnClassify.addEventListener('click', () => {
+  // ── Backend API URL ──────────────────────────────────────
+  // Deployed on Hugging Face Spaces:
+  const API_URL = 'https://daitya007-mri-tumor-backend.hf.space';
+
+  btnClassify.addEventListener('click', async () => {
     if (!uploadedImage) return;
     btnClassify.classList.add('loading');
     btnClassify.disabled = true;
 
-    // Simulated classification delay
-    setTimeout(() => {
+    try {
+      const result = await classifyWithBackend(uploadedImage, API_URL);
+      displayResults(result);
+    } catch (err) {
+      console.warn('Backend unavailable, falling back to simulation:', err.message);
       const result = simulateClassification(uploadedImage);
       displayResults(result);
+    } finally {
       btnClassify.classList.remove('loading');
       btnClassify.disabled = false;
-    }, 1200 + Math.random() * 800);
+    }
   });
 
   function displayResults(result) {
@@ -265,6 +273,41 @@ function generateSampleMRI(cls) {
   ctx.putImageData(imageData, 0, 0);
 
   return canvas.toDataURL();
+}
+
+// ─── Backend API call ────────────────────────────────────
+async function classifyWithBackend(imgSrc, apiUrl) {
+  // Convert data URL to a File/Blob for upload
+  const res = await fetch(imgSrc);
+  const blob = await res.blob();
+  const file = new File([blob], 'mri_scan.png', { type: blob.type || 'image/png' });
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${apiUrl}/predict`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData.detail || `Server responded with ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  // Map backend response to the format expected by displayResults()
+  const classes = ['Glioma', 'Meningioma', 'No Tumor', 'Pituitary'];
+  const probabilities = classes.map(c => data.probabilities[c] || 0);
+  const classIndex = classes.indexOf(data.prediction);
+
+  return {
+    className: data.prediction,
+    classIndex: classIndex >= 0 ? classIndex : 0,
+    confidence: data.confidence,
+    probabilities: probabilities,
+  };
 }
 
 function simulateClassification(imgSrc) {
